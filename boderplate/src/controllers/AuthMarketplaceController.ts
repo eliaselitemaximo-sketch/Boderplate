@@ -1,24 +1,17 @@
 import { Request, Response } from 'express';
-import { AuthMercadoLivreService } from '../services/mercadolivre/AuthMercadoLivreService';
 import { AuthShopeeService } from '../services/shopee/AuthShopeeService';
 import { AuthTikTokShopService } from '../services/tiktokshop/AuthTikTokShopService';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { validationResult } from 'express-validator';
 import { UserMarketplaceService } from '../services/UserMarketplaceService';
 import logger from '../infra/logs/logger';
+import { getAuthService, getTokenService } from '../services/mercadolivre/MercadoLivreFactory';
 
 export class AuthMarketplaceController {
-  private mercadoLivreService: AuthMercadoLivreService;
-  private shopeeService: AuthShopeeService;
-  private tiktokshopService: AuthTikTokShopService;
-  private userMarketplaceService: UserMarketplaceService;
-
-  constructor() {
-    this.mercadoLivreService = new AuthMercadoLivreService();
-    this.shopeeService = new AuthShopeeService();
-    this.tiktokshopService = new AuthTikTokShopService();
-    this.userMarketplaceService = new UserMarketplaceService();
-  }
+  private mercadoLivreService = getAuthService();
+  private shopeeService = new AuthShopeeService();
+  private tiktokshopService = new AuthTikTokShopService();
+  private userMarketplaceService = new UserMarketplaceService();
 
   private handleError(req: Request, res: Response, error: any, defaultMessage: string = 'Internal server error') {
     const response = { error: error?.message || defaultMessage };
@@ -137,6 +130,7 @@ export class AuthMarketplaceController {
       }
 
       const result = await this.mercadoLivreService.exchangeCodeForToken(code, state);
+      getTokenService().clearCache(); // Clear token cache after refresh
       logger.info({
         context: 'AuthMarketplaceController',
         action: 'mercadoLivreCallback',
@@ -273,6 +267,7 @@ export class AuthMarketplaceController {
       switch (userMarketplace.type) {
         case 'ml': {
           result = await this.mercadoLivreService.refreshAccessToken(userMarketplaceId);
+          getTokenService().clearCache(); // Clear token cache after refresh
           break;
         }
         case 'sh': {

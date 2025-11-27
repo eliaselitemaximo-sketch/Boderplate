@@ -1,16 +1,22 @@
 import { Router } from 'express';
 import { WebhookController } from '../controllers/WebhookController';
-import { authMiddleware } from '../middleware/authMiddleware';
 
 const webhookRouter = Router();
 const controller = new WebhookController();
 
-// Rota pública para receber webhooks (sem autenticação)
-// Esta rota recebe webhooks dos marketplaces (Mercado Livre, Shopee, TikTok Shop)
-// URLs configuradas no .env: WEBHOOK_URL_ML, WEBHOOK_URL_SH, WEBHOOK_URL_TK
 webhookRouter.post('/', controller.handleWebhook);
+webhookRouter.post('/webhook', controller.handleWebhook);
 
-// Rota protegida para listar todos os logs de webhooks (requer autenticação)
-webhookRouter.get('/logs', authMiddleware, controller.getAllWebhookLogs);
+webhookRouter.get('/health', controller.health);
+webhookRouter.get('/status', controller.status);
+
+webhookRouter.post('/processar-ordem/:orderId', controller.processarOrdem);
+webhookRouter.post('/processar-pacote/:packId', controller.processarPacote);
+webhookRouter.post('/limpar-fila', controller.limparFila);
+webhookRouter.post('/recuperar-notificacoes', controller.recuperarNotificacoes);
+webhookRouter.post('/reprocessar-notificacoes', controller.reprocessarNotificacoes);
+webhookRouter.get('/historico-notificacoes', controller.historicoNotificacoes);
+webhookRouter.get('/estatisticas-notificacoes', controller.estatisticasNotificacoes);
+webhookRouter.get('/logs', controller.getAllWebhookLogs);
 
 export { webhookRouter };
